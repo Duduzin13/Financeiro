@@ -43,8 +43,8 @@
 
 # Configuração de redirecionamentos de autenticação OAuth
 [[redirects]]
-  from = "/dashboard"
-  to = "/api/auth/callback"
+  from = "/auth/callback"
+  to = "/dashboard"
   status = 200
 
 # Adicionar redirecionamento específico para o callback do Google OAuth
