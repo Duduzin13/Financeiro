@@ -27,8 +27,12 @@ export function initSupabase() {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: true,
-        flowType: 'implicit',
+        // Usar flowType "pkce" em vez de "implicit" para maior segurança e melhor compatibilidade
+        flowType: 'pkce',
+        // Adicionamos sites URL para evitar problemas de redirecionamento
         redirectTo: `${baseUrl}/dashboard`,
+        // Configurar o site URL para garantir que os emails de confirmação apontem para o endereço correto
+        site_url: baseUrl,
         // Adicionar estas propriedades para depuração
         debug: true,
         storageKey: 'supabase.auth.token',
@@ -63,7 +67,19 @@ export function initSupabase() {
         onAuthStateChange: (event) => {
           console.log(`[Auth Debug] Evento de autenticação:`, event);
         }
-      }
+      },
+      // Ativar manipulação global de erros
+      global: {
+        headers: {
+          'X-Client-Info': 'financeiro-control@1.0.0',
+        },
+      },
+      // Aumentar o timeout para dar mais tempo para operações de autenticação
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
     })
     
     console.log("Cliente Supabase inicializado com sucesso")

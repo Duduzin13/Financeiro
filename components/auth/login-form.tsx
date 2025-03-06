@@ -71,27 +71,60 @@ export function LoginForm() {
     setLoading(true)
     
     try {
+      console.log("Iniciando login com email:", email);
       const supabase = initSupabase()
-      const { error } = await supabase.auth.signInWithPassword({
+      
+      // 1. Verificar se o usuário tem um registro valido e confirmado
+      // Podemos primeiro verificar se o email está confirmado
+      const { data: userData, error: userError } = await supabase.auth.signInWithPassword({
         email,
         password
       })
       
-      if (error) {
-        if (error.message.includes("Email not confirmed")) {
+      if (userError) {
+        console.error("Erro ao fazer login:", userError);
+        
+        // Mensagens de erro mais específicas
+        if (userError.message.includes("Email not confirmed")) {
           setIsEmailNotConfirmed(true)
           return
         } 
-        else if (error.message.includes("Invalid login credentials")) {
+        else if (userError.message.includes("Invalid login credentials")) {
           setIsInvalidCredentials(true)
           return
         }
+        else if (userError.message.includes("Invalid email")) {
+          setError("Email inválido. Verifique o formato do email inserido.")
+          return
+        }
+        else if (userError.message.includes("Password should be")) {
+          setError("A senha não atende aos requisitos mínimos de segurança.")
+          return
+        }
+        
         // Para outros erros desconhecidos
-        setError(error.message || "Erro ao fazer login. Tente novamente.")
+        setError(userError.message || "Erro ao fazer login. Tente novamente.")
         return
       }
       
-      router.push("/dashboard")
+      // Login bem-sucedido
+      console.log("Login bem-sucedido:", userData);
+
+      // Verificar se temos uma sessão válida
+      if (!userData.session) {
+        setError("Sessão não iniciada corretamente. Tente novamente.")
+        return
+      }
+      
+      // Armazenar token na localStorage para persistência
+      if (userData.session?.access_token) {
+        localStorage.setItem('supabase.auth.token', userData.session.access_token);
+      }
+      
+      // Aguardar um momento antes de redirecionar para garantir que o estado seja atualizado
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 500);
     } catch (error: any) {
       // Erros inesperados que podem ocorrer fora da API de autenticação
       console.error("Erro inesperado ao fazer login:", error)
@@ -145,13 +178,39 @@ export function LoginForm() {
       
       console.log("URL de redirecionamento:", redirectTo);
       
-      // Usar abordagem simplificada que abre diretamente a URL do OAuth
-      // em vez de usar a API Supabase que pode estar causando problemas de comunicação
-      window.location.href = `https://lfektiroskyzruqjvlhw.supabase.co/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
+      // Voltamos a usar a API do Supabase, mas com configurações melhoradas
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectTo,
+          queryParams: {
+            // Forçar re-consentimento para evitar problemas de sessão
+            prompt: 'consent',
+            // Escopos adicionais para garantir acesso ao email
+            access_type: 'offline',
+            // Incluir o redirecionamento na URL para o Supabase saber para onde voltar
+            redirect_uri: redirectTo
+          }
+        }
+      })
       
-      // Não precisamos mais esperar pela resposta aqui, pois estamos
-      // redirecionando diretamente para a URL de autorização
-      return;
+      if (error) {
+        console.error("Erro na API do OAuth:", error);
+        setError("Erro ao iniciar login com Google: " + error.message);
+        return;
+      }
+      
+      if (!data?.url) {
+        console.error("URL de autorização não retornada");
+        setError("Erro ao iniciar fluxo de autenticação com Google. Tente novamente.");
+        return;
+      }
+      
+      console.log("Redirecionando para URL de autenticação:", data.url);
+      
+      // Redirecionar para o URL fornecido pelo Supabase
+      window.location.href = data.url;
+      
     } catch (error: any) {
       console.error("Erro ao fazer login com Google:", error)
       setError("Erro ao fazer login com Google. Tente novamente.")

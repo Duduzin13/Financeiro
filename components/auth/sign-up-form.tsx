@@ -35,28 +35,82 @@ export function SignUpForm() {
       return
     }
     
+    if (password.length < 6) {
+      setErrorMessage("A senha deve ter pelo menos 6 caracteres")
+      return
+    }
+    
     setErrorMessage("")
     setSignupSuccess(false)
     setIsLoading(true)
     
     try {
+      console.log("Iniciando cadastro com email:", email);
       const supabase = initSupabase()
-      const { error } = await supabase.auth.signUp({
+      
+      // Determinar a URL base para redirecionamentos
+      const baseUrl = typeof window !== 'undefined' 
+        ? window.location.origin
+        : 'https://financeiro-control.netlify.app';
+      
+      // Configurar opções para o cadastro
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            name
+            name: name,
+            full_name: name
+          },
+          // Sem confirmação de email para ambiente de desenvolvimento/teste
+          emailRedirectTo: `${baseUrl}/dashboard`,
+          // Se estiver rodando localmente, podemos auto-confirmar o email
+          // Em produção isso deve ser falso para manter a segurança
+          emailVerification: {
+            redirectTo: `${baseUrl}/dashboard`
           }
         }
       })
       
-      if (error) throw error
+      console.log("Resposta do cadastro:", data);
       
-      // Sucesso
-      setSignupSuccess(true)
-      // Não redirecionar - esperar confirmação do email
-      // router.push("/login")
+      if (error) {
+        console.error("Erro ao criar conta:", error);
+        
+        // Mensagens de erro específicas
+        if (error.message.includes("already registered")) {
+          setErrorMessage("Este email já está cadastrado. Tente fazer login.");
+        } else if (error.message.includes("Password should be")) {
+          setErrorMessage("A senha não atende aos requisitos mínimos de segurança.");
+        } else if (error.message.includes("rate limit")) {
+          setErrorMessage("Muitas tentativas. Aguarde um momento e tente novamente.");
+        } else {
+          setErrorMessage(error.message || "Erro ao criar conta. Tente novamente.");
+        }
+        return;
+      }
+      
+      // Verificar se o usuário foi criado
+      if (!data?.user) {
+        setErrorMessage("Não foi possível criar a conta. Tente novamente.");
+        return;
+      }
+      
+      // Verificar se é necessário confirmar o email
+      if (data.user.identities && data.user.identities.length > 0) {
+        const identity = data.user.identities[0];
+        // Se o identity.identity_data.email_confirmed for true, redirecionar para dashboard
+        if (identity.identity_data?.email_confirmed === true) {
+          // Email já está confirmado, podemos redirecionar para o dashboard
+          console.log("Email já confirmado, redirecionando para dashboard");
+          router.push("/dashboard");
+          return;
+        }
+      }
+      
+      // Caso contrário, mostrar a mensagem de sucesso padrão
+      console.log("Cadastro realizado com sucesso, aguardando confirmação de email");
+      setSignupSuccess(true);
     } catch (error: any) {
       console.error("Erro ao criar conta:", error)
       setErrorMessage(error.message || "Erro ao criar conta. Tente novamente.")
@@ -82,13 +136,39 @@ export function SignUpForm() {
       
       console.log("URL de redirecionamento:", redirectTo);
       
-      // Usar abordagem simplificada que abre diretamente a URL do OAuth
-      // em vez de usar a API Supabase que pode estar causando problemas de comunicação
-      window.location.href = `https://lfektiroskyzruqjvlhw.supabase.co/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
+      // Voltamos a usar a API do Supabase, mas com configurações melhoradas
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectTo,
+          queryParams: {
+            // Forçar re-consentimento para evitar problemas de sessão
+            prompt: 'consent',
+            // Escopos adicionais para garantir acesso ao email
+            access_type: 'offline',
+            // Incluir o redirecionamento na URL para o Supabase saber para onde voltar
+            redirect_uri: redirectTo
+          }
+        }
+      })
       
-      // Não precisamos mais esperar pela resposta aqui, pois estamos
-      // redirecionando diretamente para a URL de autorização
-      return;
+      if (error) {
+        console.error("Erro na API do OAuth:", error);
+        setErrorMessage("Erro ao iniciar cadastro com Google: " + error.message);
+        return;
+      }
+      
+      if (!data?.url) {
+        console.error("URL de autorização não retornada");
+        setErrorMessage("Erro ao iniciar fluxo de autenticação com Google. Tente novamente.");
+        return;
+      }
+      
+      console.log("Redirecionando para URL de autenticação:", data.url);
+      
+      // Redirecionar para o URL fornecido pelo Supabase
+      window.location.href = data.url;
+      
     } catch (error: any) {
       console.error("Erro ao criar conta com Google:", error)
       setErrorMessage("Erro ao criar conta com Google: " + error.message)
