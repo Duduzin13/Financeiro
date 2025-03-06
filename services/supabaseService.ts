@@ -22,13 +22,13 @@ export const supabaseService = {
       query.or(`type.eq.${type},type.eq.both`);
     }
     
-    const { data, error } = await query.returns<Category[]>();
+    const { data, error } = await query;
     
     if (error) {
       console.error("Erro ao buscar categorias:", error);
       throw error;
     }
-    return data || [];
+    return (data || []) as Category[];
   },
 
   async createCategory(category: Omit<Category, 'id' | 'created_at' | 'user_id'>): Promise<Category> {
@@ -51,14 +51,13 @@ export const supabaseService = {
         user_id: userData.user.id
       })
       .select()
-      .single()
-      .returns<Category>();
+      .single();
     
     if (error) {
       console.error("Erro ao criar categoria:", error);
       throw error;
     }
-    return data;
+    return data as Category;
   },
 
   async updateCategory(id: string, category: Partial<Omit<Category, 'id' | 'created_at' | 'user_id'>>): Promise<Category> {
@@ -67,14 +66,13 @@ export const supabaseService = {
       .update(category)
       .eq('id', id)
       .select()
-      .single()
-      .returns<Category>();
+      .single();
     
     if (error) {
       console.error("Erro ao atualizar categoria:", error);
       throw error;
     }
-    return data;
+    return data as Category;
   },
 
   async deleteCategory(id: string): Promise<boolean> {
@@ -123,7 +121,9 @@ export const supabaseService = {
         description: income.description,
         amount: income.amount,
         category: income.category || 'Geral',
-        user_id: userData.user.id
+        user_id: userData.user.id,
+        // Remover o campo is_recurrent até que a coluna seja adicionada ao banco de dados
+        // is_recurrent: income.is_recurrent || false
       })
       .select()
       .single();
@@ -136,9 +136,17 @@ export const supabaseService = {
   },
 
   async updateIncome(id: string, income: Partial<IncomeInput>) {
+    // Copia o objeto income para não modificar o original
+    const incomeData = { ...income };
+    
+    // Remove o campo is_recurrent até que a coluna seja adicionada
+    if ('is_recurrent' in incomeData) {
+      delete incomeData.is_recurrent;
+    }
+    
     const { data, error } = await getSupabase()
       .from('incomes')
-      .update(income)
+      .update(incomeData)
       .eq('id', id)
       .select()
       .single();
@@ -249,11 +257,10 @@ export const supabaseService = {
         *,
         category:categories(*)
       `)
-      .order('date', { ascending: false })
-      .returns<TransactionWithCategory[]>();
+      .order('date', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    return (data || []) as TransactionWithCategory[];
   },
 
   async createTransaction(transaction: Omit<Transaction, 'id' | 'created_at' | 'user_id'>): Promise<Transaction> {
@@ -261,11 +268,10 @@ export const supabaseService = {
       .from('transactions')
       .insert(transaction)
       .select()
-      .single()
-      .returns<Transaction>();
+      .single();
     
     if (error) throw error;
-    return data;
+    return data as Transaction;
   },
 
   async getDashboardData(): Promise<DashboardData> {
@@ -274,16 +280,14 @@ export const supabaseService = {
         .from('transactions')
         .select('*')
         .order('date', { ascending: false })
-        .limit(5)
-        .returns<Transaction[]>();
+        .limit(5);
 
       if (transactionsError) throw transactionsError;
 
       // Buscar os totais mensais
       const { data, error } = await getSupabase()
         .from('monthly_totals_view')
-        .select('*')
-        .returns<MonthlyTotal[]>();
+        .select('*');
 
       // Valor padrão para os totais mensais
       const defaultMonthlyTotal: MonthlyTotal = {

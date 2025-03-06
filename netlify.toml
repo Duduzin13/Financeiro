@@ -9,12 +9,23 @@
 [build.environment]
   NETLIFY_NEXT_PLUGIN_DEBUG = "true"
   NODE_VERSION = "20"
+  # Variáveis de ambiente do Supabase diretamente no build
+  NEXT_PUBLIC_SUPABASE_URL = "https://lfektiroskyzruqjvlhw.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmZWt0aXJvc2t5enJ1cWp2bGh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDExNzkyNjMsImV4cCI6MjA1Njc1NTI2M30.sTuqp2PKK9bnLwhUib2Knof3cWQb2XtysozN_vv1x_E"
 
 # Regras específicas para assets estáticos
 [[headers]]
   for = "/_next/static/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# Headers para resolver problemas de CORS
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept, Authorization"
 
 # IMPORTANTE: Não redirecionamos /_next/* para index.html
 # Esta é a principal correção para os erros de carregamento JS

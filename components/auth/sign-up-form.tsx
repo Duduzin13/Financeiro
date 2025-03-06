@@ -65,19 +65,40 @@ export function SignUpForm() {
     }
   }
 
-  const handleGoogleSignUp = async () => {
+  const handleGoogleSignup = async () => {
     setIsLoading(true)
     setErrorMessage("")
+    
     try {
+      console.log("Iniciando criação de conta com Google")
       const supabase = initSupabase()
-      const { error } = await supabase.auth.signInWithOAuth({
+      
+      // Determinar a URL de redirecionamento baseada no ambiente
+      const baseUrl = typeof window !== 'undefined' 
+        ? window.location.origin
+        : 'https://financeiro-control.netlify.app';
+      
+      const redirectTo = `${baseUrl}/dashboard`;
+      
+      console.log("URL de redirecionamento:", redirectTo);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
+        options: {
+          redirectTo: redirectTo,
+        }
       })
       
-      if (error) throw error
+      if (error) {
+        console.error("Erro ao criar conta com Google:", error);
+        setErrorMessage("Erro ao criar conta com Google: " + error.message)
+        return
+      }
+      
+      console.log("Criação de conta com Google processada, redirecionando...", data);
     } catch (error: any) {
       console.error("Erro ao criar conta com Google:", error)
-      setErrorMessage("Erro ao criar conta com Google. Tente novamente.")
+      setErrorMessage("Erro ao criar conta com Google: " + error.message)
     } finally {
       setIsLoading(false)
     }
@@ -192,7 +213,7 @@ export function SignUpForm() {
           <TabsContent value="google">
             <Button 
               className="w-full" 
-              onClick={handleGoogleSignUp}
+              onClick={handleGoogleSignup}
               disabled={isLoading}
               variant="outline"
             >
