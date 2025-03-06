@@ -213,74 +213,8 @@ export function SignUpForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="email" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4 dark:bg-gray-700">
-            <TabsTrigger value="email" className="dark:data-[state=active]:bg-gray-600 dark:text-white">
-              Email
-            </TabsTrigger>
-            <TabsTrigger value="google" className="dark:data-[state=active]:bg-gray-600 dark:text-white">
-              Google
-            </TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="google" className="w-full">
           
-          <TabsContent value="email" className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name" className="dark:text-white">Nome</Label>
-              <Input 
-                id="name" 
-                type="text" 
-                placeholder="Seu nome completo" 
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="email" className="dark:text-white">E-mail</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="nome@exemplo.com" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password" className="dark:text-white">Senha</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                placeholder="Crie uma senha forte"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="confirm-password" className="dark:text-white">Confirmar Senha</Label>
-              <Input 
-                id="confirm-password" 
-                type="password" 
-                placeholder="Repita sua senha"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
-              />
-            </div>
-            {errorMessage && (
-              <div className="text-sm text-red-500 dark:text-red-400">
-                {errorMessage}
-              </div>
-            )}
-            <Button 
-              className="w-full" 
-              onClick={handleSignUp}
-              disabled={isLoading}
-            >
-              {isLoading ? "Criando conta..." : "Criar Conta"}
-            </Button>
-          </TabsContent>
           
           <TabsContent value="google">
             <Button 
@@ -289,7 +223,7 @@ export function SignUpForm() {
               disabled={isLoading}
               variant="outline"
             >
-              {isLoading ? "Processando..." : "Criar Conta com Google"}
+              {isLoading ? "Processando..." : "Cadastrar com Google"}
             </Button>
           </TabsContent>
         </Tabs>
