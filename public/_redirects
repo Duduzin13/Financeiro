@@ -1,5 +1,14 @@
-# Redirecionar arquivos estáticos do Next.js para o caminho correto
-/_next/*  /_next/:splat  200!
+# IMPORTANTE: Garantir que arquivos estáticos do Next.js sejam servidos corretamente
+# Os wildcards mais específicos devem vir primeiro
+/_next/static/*  /_next/static/:splat  200!
+/_next/data/*    /_next/data/:splat    200!
+/_next/*         /_next/:splat         200!
 
-# Rota de fallback para spa
+# API routes
+/api/*  /api/:splat  200!
+
+# Rotas de autenticação
+/auth/*  /auth/:splat  200!
+
+# As rotas SPA vêm por último (para páginas não encontradas)
 /*  /index.html  200 

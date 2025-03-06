@@ -15,8 +15,16 @@
   for = "/_next/static/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
-  
-# Garantir que rotas SPA sejam tratadas adequadamente
+
+# IMPORTANTE: Não redirecionamos /_next/* para index.html
+# Esta é a principal correção para os erros de carregamento JS
+[[redirects]]
+  from = "/_next/*"
+  to = "/_next/:splat"
+  status = 200
+  force = true
+
+# Redirecionamento SPA apenas para rotas da aplicação, não para arquivos estáticos
 [[redirects]]
   from = "/*"
   to = "/index.html"
