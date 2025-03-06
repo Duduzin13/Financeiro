@@ -208,11 +208,8 @@ export function LoginForm() {
       
       console.log("Redirecionando para URL de autenticação:", data.url);
       
-      // Redirecionar para o URL fornecido pelo Supabase
-      window.location.href = data.url;
-      
-      // Após a autenticação, redirecionar para o dashboard
-      router.push("/dashboard");
+      // Redirecionar para o dashboard após autenticação
+      window.location.href = '/dashboard';
       
     } catch (error: any) {
       console.error("Erro ao fazer login com Google:", error)
