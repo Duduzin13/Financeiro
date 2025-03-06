@@ -260,88 +260,12 @@ export function LoginForm() {
           </div>
         )}
 
-        <Tabs defaultValue="email" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4 dark:bg-gray-700">
-            <TabsTrigger value="email" className="dark:data-[state=active]:bg-gray-600 dark:text-white">
-              Email
-            </TabsTrigger>
+        <Tabs defaultValue="google" className="w-full">
+          <TabsList className="grid w-full grid-cols-1 mb-4 dark:bg-gray-700">
             <TabsTrigger value="google" className="dark:data-[state=active]:bg-gray-600 dark:text-white">
               Google
             </TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="email" className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email" className="dark:text-white">E-mail</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="nome@exemplo.com" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
-              />
-            </div>
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="dark:text-white">Senha</Label>
-                <Link href="#" className="text-sm text-blue-600 hover:underline dark:text-blue-400">
-                  Esqueceu a senha?
-                </Link>
-              </div>
-              <Input 
-                id="password" 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
-              />
-            </div>
-            
-            {error && !isEmailNotConfirmed && !isInvalidCredentials && (
-              <div className="text-sm text-red-500 dark:text-red-400">
-                {error}
-              </div>
-            )}
-            
-            {isEmailNotConfirmed && (
-              <Alert className="bg-amber-50 border-amber-300 dark:bg-amber-900/30 dark:border-amber-700">
-                <AlertDescription className="text-amber-800 dark:text-amber-200 text-sm">
-                  <p>Email não confirmado. Por favor verifique sua caixa de entrada.</p>
-                  <Button 
-                    variant="link" 
-                    onClick={handleResendConfirmationEmail}
-                    disabled={isResendingEmail}
-                    className="p-0 h-auto text-amber-700 dark:text-amber-300 mt-1"
-                  >
-                    {isResendingEmail ? "Reenviando..." : "Reenviar email de confirmação"}
-                  </Button>
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            {isInvalidCredentials && (
-              <Alert className="bg-red-50 border-red-300 dark:bg-red-900/30 dark:border-red-700">
-                <AlertDescription className="text-red-800 dark:text-red-200 text-sm">
-                  <p>Email ou senha incorretos. Verifique suas credenciais e tente novamente.</p>
-                  <p className="mt-1">
-                    Não tem uma conta?{" "}
-                    <Link href="/signup" className="text-red-700 hover:underline dark:text-red-300">
-                      Criar conta
-                    </Link>
-                  </p>
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            <Button 
-              className="w-full" 
-              onClick={handleLogin}
-              disabled={loading}
-            >
-              {loading ? "Entrando..." : "Entrar"}
-            </Button>
-          </TabsContent>
           
           <TabsContent value="google">
             <Button 
@@ -368,3 +292,4 @@ export function LoginForm() {
 }
 
 export default LoginForm;
+
