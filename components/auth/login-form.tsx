@@ -213,10 +213,6 @@ export function LoginForm() {
         window.location.href = data.url;
       }
       
-      // Após a autenticação, redirecionar para o dashboard
-      router.push("/dashboard");
-      
-      
     } catch (error: any) {
       console.error("Erro ao fazer login com Google:", error)
       setError("Erro ao fazer login com Google. Tente novamente.")
