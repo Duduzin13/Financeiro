@@ -47,13 +47,6 @@
   to = "/api/auth/callback"
   status = 200
 
-# Adicionar redirecionamento específico para o callback do Google OAuth
-[[redirects]]
-  from = "/auth/callback*"
-  to = "/dashboard"
-  status = 302
-  force = true
-
 # Redirecionar para a página de dashboard após login bem-sucedido
 [[redirects]]
   from = "/_supabase/auth/v1/callback"

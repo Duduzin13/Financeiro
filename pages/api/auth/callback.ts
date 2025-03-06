@@ -26,4 +26,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Redirecionar para o dashboard mesmo em caso de erro
     res.redirect('/dashboard');
   }
-} 
+}
