@@ -303,10 +303,10 @@ export const supabaseService = {
       // Buscar receitas e despesas entre startDate e hoje
       const { data: incomes, error: incomesError } = await supabase
         .from('incomes')
-        .select('amount, date')
+        .select('amount, created_at')
         .eq('user_id', userId)
-        .gte('date', startDate.toISOString())
-        .order('date', { ascending: false })
+        .gte('created_at', startDate.toISOString())
+        .order('created_at', { ascending: false })
       
       if (incomesError) {
         console.error("[SupabaseService] Erro ao buscar receitas:", incomesError)
@@ -316,10 +316,10 @@ export const supabaseService = {
 
       const { data: expenses, error: expensesError } = await supabase
         .from('expenses')
-        .select('amount, date')
+        .select('amount, created_at')
         .eq('user_id', userId)
-        .gte('date', startDate.toISOString())
-        .order('date', { ascending: false })
+        .gte('created_at', startDate.toISOString())
+        .order('created_at', { ascending: false })
       
       if (expensesError) {
         console.error("[SupabaseService] Erro ao buscar despesas:", expensesError)
@@ -330,7 +330,7 @@ export const supabaseService = {
       // Define interfaces para as transações
       interface Transaction {
         amount: number;
-        date: string;
+        created_at: string;
       }
       
       interface MonthlyAmount {
@@ -340,7 +340,7 @@ export const supabaseService = {
       // Função para agrupar transações por mês
       const groupByMonth = (transactions: Transaction[]): MonthlyAmount => {
         return transactions.reduce((acc: MonthlyAmount, transaction: Transaction) => {
-          const date = new Date(transaction.date)
+          const date = new Date(transaction.created_at)
           const month = new Date(date.getFullYear(), date.getMonth(), 1).toISOString()
           
           if (!acc[month]) {
@@ -469,7 +469,7 @@ export const supabaseService = {
           categories!inner(name)
         `)
         .eq('user_id', userId)
-        .gte('date', startDate.toISOString())
+        .gte('created_at', startDate.toISOString())
         .order('amount', { ascending: false })
       
       if (error) {
@@ -541,7 +541,7 @@ export const supabaseService = {
           categories!inner(name)
         `)
         .eq('user_id', userId)
-        .gte('date', startDate.toISOString())
+        .gte('created_at', startDate.toISOString())
         .order('amount', { ascending: false })
         .limit(limit)
       
