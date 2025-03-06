@@ -1,1 +1,5 @@
-/*    /index.html   200 
+# Redirecionar arquivos estáticos do Next.js para o caminho correto
+/_next/*  /_next/:splat  200!
+
+# Rota de fallback para spa
+/*  /index.html  200 
