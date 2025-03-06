@@ -133,7 +133,7 @@ export function SignUpForm() {
         : 'https://financeiro-control.netlify.app';
       
       // Usar /auth/callback em vez de /dashboard para o redirecionamento
-      const redirectTo = `${baseUrl}/auth/callback`;
+      const redirectTo = `${baseUrl}/dashboard`;
       
       console.log("URL de redirecionamento:", redirectTo);
       
