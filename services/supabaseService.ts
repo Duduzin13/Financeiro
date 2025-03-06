@@ -274,47 +274,73 @@ export const supabaseService = {
     return data as Transaction;
   },
 
-  async getDashboardData(): Promise<DashboardData> {
+  // Obter dados do dashboard
+  async getDashboardData(period = "3") {
     try {
-      const { data: transactions, error: transactionsError } = await getSupabase()
-        .from('transactions')
-        .select('*')
+      const months = parseInt(period)
+      const startDate = new Date()
+      startDate.setMonth(startDate.getMonth() - months)
+      startDate.setHours(0, 0, 0, 0)
+      
+      // Buscar receitas e despesas entre startDate e hoje
+      const { data: incomes } = await getSupabase()
+        .from('incomes')
+        .select('amount, date')
+        .gte('date', startDate.toISOString())
         .order('date', { ascending: false })
-        .limit(5);
 
-      if (transactionsError) throw transactionsError;
+      const { data: expenses } = await getSupabase()
+        .from('expenses')
+        .select('amount, date')
+        .gte('date', startDate.toISOString())
+        .order('date', { ascending: false })
 
-      // Buscar os totais mensais
-      const { data, error } = await getSupabase()
-        .from('monthly_totals_view')
-        .select('*');
+      // Define interfaces para as transações
+      interface Transaction {
+        amount: number;
+        date: string;
+      }
+      
+      interface MonthlyAmount {
+        [key: string]: number;
+      }
 
-      // Valor padrão para os totais mensais
-      const defaultMonthlyTotal: MonthlyTotal = {
-        month: new Date().toISOString(),
-        total_income: 0,
-        total_expenses: 0,
-        balance: 0
-      };
+      // Função para agrupar transações por mês
+      const groupByMonth = (transactions: Transaction[]): MonthlyAmount => {
+        return transactions.reduce((acc: MonthlyAmount, transaction: Transaction) => {
+          const date = new Date(transaction.date)
+          const month = new Date(date.getFullYear(), date.getMonth(), 1).toISOString()
+          
+          if (!acc[month]) {
+            acc[month] = 0
+          }
+          
+          acc[month] += transaction.amount
+          return acc
+        }, {})
+      }
 
-      // Se houver erro ou nenhum dado, retorna o valor padrão
-      const monthlyTotals = error || !data ? [defaultMonthlyTotal] : data;
+      // Agrupar transações por mês
+      const incomesByMonth = groupByMonth(incomes || [])
+      const expensesByMonth = groupByMonth(expenses || [])
 
-      return {
-        recentTransactions: transactions || [],
-        monthlyTotals
-      };
+      // Combinar os dados e gerar monthlyTotals
+      const allMonths = [...new Set([
+        ...Object.keys(incomesByMonth),
+        ...Object.keys(expensesByMonth)
+      ])].sort().reverse()
+
+      const monthlyTotals = allMonths.map(month => ({
+        month,
+        total_income: incomesByMonth[month] || 0,
+        total_expenses: expensesByMonth[month] || 0,
+        balance: (incomesByMonth[month] || 0) - (expensesByMonth[month] || 0)
+      }))
+
+      return { monthlyTotals }
     } catch (error) {
-      console.error('Erro ao buscar dados do dashboard:', error);
-      return {
-        recentTransactions: [],
-        monthlyTotals: [{
-          month: new Date().toISOString(),
-          total_income: 0,
-          total_expenses: 0,
-          balance: 0
-        }]
-      };
+      console.error("Erro ao obter dados do dashboard:", error)
+      return { monthlyTotals: [] }
     }
   },
 
@@ -380,6 +406,98 @@ export const supabaseService = {
     } catch (error) {
       console.error("Erro ao excluir perfil:", error)
       throw error
+    }
+  },
+
+  // Obter despesas por categoria
+  async getExpensesByCategory(period = "3") {
+    try {
+      const months = parseInt(period)
+      const startDate = new Date()
+      startDate.setMonth(startDate.getMonth() - months)
+      startDate.setHours(0, 0, 0, 0)
+      
+      const { data, error } = await getSupabase()
+        .from('expenses')
+        .select(`
+          amount,
+          categories!inner(name)
+        `)
+        .gte('date', startDate.toISOString())
+        .order('amount', { ascending: false })
+      
+      if (error) throw error
+      
+      // Define tipos para os dados
+      interface CategoryExpense {
+        category_name: string;
+        total_amount: number;
+      }
+      
+      // Agrupa despesas por categoria
+      const expensesByCategory = data.reduce((acc: CategoryExpense[], expense: any) => {
+        const categoryName = expense.categories?.name || 'Sem Categoria'
+        const existingCategory = acc.find((cat: CategoryExpense) => cat.category_name === categoryName)
+        
+        if (existingCategory) {
+          existingCategory.total_amount += expense.amount
+        } else {
+          acc.push({
+            category_name: categoryName,
+            total_amount: expense.amount
+          })
+        }
+        
+        return acc
+      }, [] as CategoryExpense[])
+      
+      // Ordena por valor total (maior para menor)
+      expensesByCategory.sort((a: CategoryExpense, b: CategoryExpense) => b.total_amount - a.total_amount)
+      
+      return { data: expensesByCategory, error: null }
+    } catch (error) {
+      console.error("Erro ao obter despesas por categoria:", error)
+      return { data: [], error }
+    }
+  },
+
+  // Obter as maiores despesas
+  async getTopExpenses(period = "3", limit = 5) {
+    try {
+      const months = parseInt(period)
+      const startDate = new Date()
+      startDate.setMonth(startDate.getMonth() - months)
+      startDate.setHours(0, 0, 0, 0)
+      
+      const { data, error } = await getSupabase()
+        .from('expenses')
+        .select(`
+          amount,
+          description,
+          categories!inner(name)
+        `)
+        .gte('date', startDate.toISOString())
+        .order('amount', { ascending: false })
+        .limit(limit)
+      
+      if (error) throw error
+      
+      interface Expense {
+        amount: number;
+        description: string;
+        categories: { name: string };
+      }
+      
+      const formattedData = data.map((expense: Expense) => ({
+        amount: expense.amount,
+        description: expense.description,
+        category_name: expense.categories?.name || 'Sem Categoria'
+      }))
+      
+      return { data: formattedData, error: null }
+    } catch (error) {
+      console.error("Erro ao obter maiores despesas:", error)
+      return { data: [], error }
     }
   },
 };

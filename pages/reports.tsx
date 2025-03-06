@@ -61,31 +61,10 @@ export default function ReportsPage() {
     emergencyFund: 0
   })
   
-  // Dados fictícios para os gráficos e análises
-  const [monthlyChartData, setMonthlyChartData] = useState([
-    { name: 'Jan', receitas: 3000, despesas: 2500 },
-    { name: 'Fev', receitas: 3200, despesas: 2800 },
-    { name: 'Mar', receitas: 2800, despesas: 2300 },
-    { name: 'Abr', receitas: 3500, despesas: 3000 },
-    { name: 'Mai', receitas: 3700, despesas: 2900 },
-    { name: 'Jun', receitas: 3300, despesas: 2700 },
-  ])
-  
-  const [categoryData, setCategoryData] = useState<CategoryExpense[]>([
-    { name: 'Moradia', valor: 1200, color: '#FF8042' },
-    { name: 'Alimentação', valor: 800, color: '#00C49F' },
-    { name: 'Transporte', valor: 500, color: '#FFBB28' },
-    { name: 'Lazer', valor: 300, color: '#0088FE' },
-    { name: 'Saúde', valor: 200, color: '#FF0000' },
-  ])
-  
-  const [topExpenses, setTopExpenses] = useState<TopExpense[]>([
-    { name: 'Aluguel', valor: 900, categoria: 'Moradia' },
-    { name: 'Supermercado', valor: 600, categoria: 'Alimentação' },
-    { name: 'Gasolina', valor: 300, categoria: 'Transporte' },
-    { name: 'Restaurantes', valor: 250, categoria: 'Alimentação' },
-    { name: 'Cinema', valor: 150, categoria: 'Lazer' },
-  ])
+  // Dados para os gráficos e análises
+  const [monthlyChartData, setMonthlyChartData] = useState<{name: string, receitas: number, despesas: number}[]>([])
+  const [categoryData, setCategoryData] = useState<CategoryExpense[]>([])
+  const [topExpenses, setTopExpenses] = useState<TopExpense[]>([])
 
   useEffect(() => {
     setMounted(true)
@@ -103,18 +82,13 @@ export default function ReportsPage() {
   const loadReportData = async () => {
     setIsLoading(true)
     try {
-      // Idealmente, o supabaseService teria um método específico para obter dados de relatório
-      // por período, mas por enquanto vamos usar os dados do dashboard
-      const dashboardData = await supabaseService.getDashboardData()
+      // Carregando dados básicos do dashboard
+      const dashboardData = await supabaseService.getDashboardData(period)
       setMonthlyTotals(dashboardData.monthlyTotals || [])
       
-      // Em uma implementação real, carregaríamos também os dados para os gráficos e análises adicionais
-      // setMonthlyChartData(processedMonthlyData)
-      // setCategoryData(processedCategoryData)
-      // setTopExpenses(processedTopExpenses)
-      
-      // Cálculo do resumo financeiro
+      // Processando dados para gráficos e análises
       if (dashboardData.monthlyTotals && dashboardData.monthlyTotals.length > 0) {
+        // Cálculo do resumo financeiro
         const totalIncome = dashboardData.monthlyTotals.reduce((sum, month) => sum + month.total_income, 0)
         const totalExpenses = dashboardData.monthlyTotals.reduce((sum, month) => sum + month.total_expenses, 0)
         
@@ -127,6 +101,46 @@ export default function ReportsPage() {
           savingsPercentage: totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0,
           emergencyFund: totalExpenses * 6 // 6 meses de despesas
         })
+        
+        // Processando dados para o gráfico de linha (receitas vs despesas)
+        const chartData = dashboardData.monthlyTotals.map(month => {
+          const date = new Date(month.month)
+          return {
+            name: date.toLocaleDateString('pt-BR', { month: 'short' }),
+            receitas: month.total_income,
+            despesas: month.total_expenses
+          }
+        })
+        setMonthlyChartData(chartData)
+        
+        // Carregando dados por categoria para o gráfico de pizza
+        const { data: expensesByCategory } = await supabaseService.getExpensesByCategory(period)
+        
+        // Definindo cores para as categorias
+        const colors = ['#FF8042', '#00C49F', '#FFBB28', '#0088FE', '#FF0000', '#8884d8', '#82ca9d', '#ffc658']
+        
+        if (expensesByCategory) {
+          const formattedCategoryData = expensesByCategory.map((category: {category_name: string, total_amount: number}, index: number) => ({
+            name: category.category_name,
+            valor: category.total_amount,
+            color: colors[index % colors.length]
+          }))
+          
+          setCategoryData(formattedCategoryData)
+        }
+        
+        // Carregando as maiores despesas
+        const { data: topExpensesData } = await supabaseService.getTopExpenses(period, 5) // top 5 despesas
+        
+        if (topExpensesData) {
+          const formattedTopExpenses = topExpensesData.map((expense: {description: string, amount: number, category_name: string}) => ({
+            name: expense.description,
+            valor: expense.amount,
+            categoria: expense.category_name
+          }))
+          
+          setTopExpenses(formattedTopExpenses)
+        }
       }
     } catch (error) {
       console.error("Erro ao carregar dados do relatório:", error)
