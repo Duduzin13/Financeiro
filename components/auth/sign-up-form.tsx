@@ -132,7 +132,8 @@ export function SignUpForm() {
         ? window.location.origin
         : 'https://financeiro-control.netlify.app';
       
-      const redirectTo = `${baseUrl}/dashboard`;
+      // Usar /auth/callback em vez de /dashboard para o redirecionamento
+      const redirectTo = `${baseUrl}/auth/callback`;
       
       console.log("URL de redirecionamento:", redirectTo);
       
@@ -145,9 +146,8 @@ export function SignUpForm() {
             // Forçar re-consentimento para evitar problemas de sessão
             prompt: 'consent',
             // Escopos adicionais para garantir acesso ao email
-            access_type: 'offline',
-            // Incluir o redirecionamento na URL para o Supabase saber para onde voltar
-            redirect_uri: redirectTo
+            access_type: 'offline'
+            // Removemos o redirect_uri personalizado para evitar conflitos
           }
         }
       })

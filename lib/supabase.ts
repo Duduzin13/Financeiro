@@ -30,7 +30,7 @@ export function initSupabase() {
         // Usar flowType "pkce" em vez de "implicit" para maior segurança e melhor compatibilidade
         flowType: 'pkce',
         // Adicionamos sites URL para evitar problemas de redirecionamento
-        redirectTo: `${baseUrl}/dashboard`,
+        redirectTo: `${baseUrl}/auth/callback`,
         // Configurar o site URL para garantir que os emails de confirmação apontem para o endereço correto
         site_url: baseUrl,
         // Adicionar estas propriedades para depuração
