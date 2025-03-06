@@ -5,20 +5,20 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Configura regras específicas para os arquivos estáticos do Next.js
+# Ativa depuração para encontrar problemas
+[build.environment]
+  NETLIFY_NEXT_PLUGIN_DEBUG = "true"
+  NODE_VERSION = "16"
+
+# Regras específicas para assets estáticos
 [[headers]]
   for = "/_next/static/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
-
-# Configura regras de fallback para rotas dinâmicas
-[[redirects]]
-  from = "/_next/*"
-  to = "/_next/:splat"
-  status = 200
-
-# Adiciona regra para páginas que não existem
+  
+# Garantir que rotas SPA sejam tratadas adequadamente
 [[redirects]]
   from = "/*"
-  to = "/404"
-  status = 404 
+  to = "/index.html"
+  status = 200
+  force = false 

@@ -11,7 +11,7 @@ const nextConfig = {
         unoptimized: true,
     },
     // Configurações necessárias para compatibilidade com o Netlify
-    output: 'standalone',
+    distDir: '.next',
     experimental: {
         webpackBuildWorker: true,
         parallelServerBuildTraces: true,
@@ -19,8 +19,8 @@ const nextConfig = {
         appDir: false,
     },
     trailingSlash: true,
-    // Garantir que arquivos estáticos sejam corretamente servidos
-    assetPrefix: process.env.NODE_ENV === 'production' ? '/_next' : '',
+    // Garantindo que geração estática seja usada ao máximo
+    target: 'serverless',
     async redirects() {
         return [{
             source: '/auth/callback',
