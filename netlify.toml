@@ -43,7 +43,7 @@
 
 # Configuração de redirecionamentos de autenticação OAuth
 [[redirects]]
-  from = "/auth/callback"
+  from = "/dashboard"
   to = "/api/auth/callback"
   status = 200
 
