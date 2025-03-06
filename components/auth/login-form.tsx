@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -12,27 +12,49 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { initSupabase } from "@/lib/supabase"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useAuth } from "@/components/auth-provider"
 
 export function LoginForm() {
+  const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { user, isConfigured } = useAuth()
   const [isResendingEmail, setIsResendingEmail] = useState(false)
-  const [errorMessage, setErrorMessage] = useState("")
   const [isEmailNotConfirmed, setIsEmailNotConfirmed] = useState(false)
   const [isInvalidCredentials, setIsInvalidCredentials] = useState(false)
-  const router = useRouter()
+
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard")
+    }
+  }, [user, router])
+
+  if (!isConfigured) {
+    return (
+      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md mb-4">
+        <h2 className="text-lg font-semibold text-yellow-700 mb-2">Configuração Incompleta</h2>
+        <p className="text-yellow-600 mb-2">
+          O sistema de autenticação não está configurado corretamente. As variáveis de ambiente do Supabase não foram encontradas.
+        </p>
+        <p className="text-sm text-yellow-500">
+          Administrador: Configure as variáveis NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY no painel do Netlify.
+        </p>
+      </div>
+    )
+  }
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setErrorMessage("Por favor, preencha todos os campos")
+      setError("Por favor, preencha todos os campos")
       return
     }
     
-    setErrorMessage("")
+    setError(null)
     setIsEmailNotConfirmed(false)
     setIsInvalidCredentials(false)
-    setIsLoading(true)
+    setLoading(true)
     
     try {
       const supabase = initSupabase()
@@ -51,7 +73,7 @@ export function LoginForm() {
           return
         }
         // Para outros erros desconhecidos
-        setErrorMessage(error.message || "Erro ao fazer login. Tente novamente.")
+        setError(error.message || "Erro ao fazer login. Tente novamente.")
         return
       }
       
@@ -59,15 +81,15 @@ export function LoginForm() {
     } catch (error: any) {
       // Erros inesperados que podem ocorrer fora da API de autenticação
       console.error("Erro inesperado ao fazer login:", error)
-      setErrorMessage("Ocorreu um erro inesperado. Tente novamente mais tarde.")
+      setError("Ocorreu um erro inesperado. Tente novamente mais tarde.")
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   const handleResendConfirmationEmail = async () => {
     if (!email) {
-      setErrorMessage("Por favor, insira seu email para reenviar a confirmação")
+      setError("Por favor, insira seu email para reenviar a confirmação")
       return
     }
 
@@ -84,32 +106,50 @@ export function LoginForm() {
       alert("Email de confirmação reenviado. Por favor, verifique sua caixa de entrada.")
     } catch (error: any) {
       console.error("Erro ao reenviar email de confirmação:", error)
-      setErrorMessage("Erro ao reenviar email. " + error.message)
+      setError("Erro ao reenviar email. " + error.message)
     } finally {
       setIsResendingEmail(false)
     }
   }
 
   const handleGoogleLogin = async () => {
-    setIsLoading(true)
-    setErrorMessage("")
+    setLoading(true)
+    setError("")
     setIsEmailNotConfirmed(false)
     setIsInvalidCredentials(false)
+    
     try {
+      console.log("Iniciando login com Google")
       const supabase = initSupabase()
-      const { error } = await supabase.auth.signInWithOAuth({
+      
+      // Determinar a URL de redirecionamento baseada no ambiente
+      const baseUrl = typeof window !== 'undefined' 
+        ? window.location.origin
+        : 'https://financeiro-control.netlify.app';
+      
+      const redirectTo = `${baseUrl}/dashboard`;
+      
+      console.log("URL de redirecionamento:", redirectTo);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
+        options: {
+          redirectTo: redirectTo,
+        }
       })
       
       if (error) {
-        setErrorMessage("Erro ao fazer login com Google: " + error.message)
+        console.error("Erro ao fazer login com Google:", error);
+        setError("Erro ao fazer login com Google: " + error.message)
         return
       }
+      
+      console.log("Login com Google processado, redirecionando...", data);
     } catch (error: any) {
       console.error("Erro ao fazer login com Google:", error)
-      setErrorMessage("Erro ao fazer login com Google. Tente novamente.")
+      setError("Erro ao fazer login com Google. Tente novamente.")
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
@@ -160,9 +200,9 @@ export function LoginForm() {
               />
             </div>
             
-            {errorMessage && !isEmailNotConfirmed && !isInvalidCredentials && (
+            {error && !isEmailNotConfirmed && !isInvalidCredentials && (
               <div className="text-sm text-red-500 dark:text-red-400">
-                {errorMessage}
+                {error}
               </div>
             )}
             
@@ -199,9 +239,9 @@ export function LoginForm() {
             <Button 
               className="w-full" 
               onClick={handleLogin}
-              disabled={isLoading}
+              disabled={loading}
             >
-              {isLoading ? "Entrando..." : "Entrar"}
+              {loading ? "Entrando..." : "Entrar"}
             </Button>
           </TabsContent>
           
@@ -209,10 +249,10 @@ export function LoginForm() {
             <Button 
               className="w-full" 
               onClick={handleGoogleLogin}
-              disabled={isLoading}
+              disabled={loading}
               variant="outline"
             >
-              {isLoading ? "Processando..." : "Entrar com Google"}
+              {loading ? "Processando..." : "Entrar com Google"}
             </Button>
           </TabsContent>
         </Tabs>

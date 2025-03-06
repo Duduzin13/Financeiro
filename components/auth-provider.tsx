@@ -11,9 +11,18 @@ type AuthContextType = {
   session: Session | null
   loading: boolean
   error: string | null
+  isConfigured: boolean
+  signOut: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, session: null, loading: true, error: null })
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  session: null,
+  loading: true,
+  error: null,
+  isConfigured: false,
+  signOut: async () => {}
+})
 
 export const useAuth = () => useContext(AuthContext)
 
@@ -23,6 +32,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [isConfigured, setIsConfigured] = useState(false)
+
+  // Função de logout
+  const signOut = async () => {
+    try {
+      const supabase = initSupabase()
+      const { error: signOutError } = await supabase.auth.signOut()
+      
+      if (signOutError) {
+        console.error("Erro ao fazer logout:", signOutError)
+        throw signOutError
+      }
+      
+      // Limpar o estado mesmo em caso de erro para garantir que o usuário seja desconectado na UI
+      setUser(null)
+      setSession(null)
+    } catch (error) {
+      console.error("Erro ao processar logout:", error)
+      throw error
+    }
+  }
 
   useEffect(() => {
     setMounted(true)
@@ -32,10 +62,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("Inicializando Supabase no AuthProvider")
         const supabase = initSupabase()
 
+        // Verificar se temos ambiente configurado corretamente
+        if (typeof window !== 'undefined') {
+          const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+          const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+          setIsConfigured(!!(url && key));
+          
+          if (!url || !key) {
+            console.warn("Variáveis de ambiente do Supabase não estão definidas. Funcionalidade de autenticação pode ser limitada.");
+          }
+        }
+
         console.log("Buscando sessão inicial")
         const {
           data: { session },
+          error: sessionError,
         } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.warn("Erro ao obter sessão:", sessionError);
+        }
+        
         setSession(session)
         setUser(session?.user ?? null)
 
@@ -66,5 +113,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return null
   }
 
-  return <AuthContext.Provider value={{ user, session, loading, error }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ user, session, loading, error, isConfigured, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }

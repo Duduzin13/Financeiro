@@ -2,21 +2,18 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { getSupabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/components/auth-provider"
 
 export function Navigation() {
   const pathname = usePathname()
   const router = useRouter()
+  const { signOut } = useAuth()
   
   const handleLogout = async () => {
     try {
-      const { error } = await getSupabase().auth.signOut()
-      if (error) {
-        console.error('Erro ao sair:', error)
-      } else {
-        router.push('/')
-      }
+      await signOut()
+      router.push('/')
     } catch (error) {
       console.error('Erro ao processar logout:', error)
     }
