@@ -1,0 +1,18 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Remove o redirecionamento para index.html que está interferindo com o roteamento do Next.js
+# [[redirects]]
+#   from = "/*"
+#   to = "/index.html"
+#   status = 200 
+
+# Adicione o redirecionamento para o fallback do SPA
+[[redirects]]
+  from = "/*"
+  to = "/_error"
+  status = 404 

@@ -4,6 +4,10 @@ const nextConfig = {
     experimental: {
         appDir: false,
     },
+    images: {
+        unoptimized: true,
+    },
+    trailingSlash: true,
     async redirects() {
         return [{
             source: '/auth/callback',
