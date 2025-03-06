@@ -261,11 +261,7 @@ export function LoginForm() {
         )}
 
         <Tabs defaultValue="google" className="w-full">
-          <TabsList className="grid w-full grid-cols-1 mb-4 dark:bg-gray-700">
-            <TabsTrigger value="google" className="dark:data-[state=active]:bg-gray-600 dark:text-white">
-              Google
-            </TabsTrigger>
-          </TabsList>
+          
           
           <TabsContent value="google">
             <Button 
