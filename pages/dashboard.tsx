@@ -118,7 +118,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
       <div className="flex-1 p-4 pb-24">
-        <h1 className="text-2xl font-bold mb-4 dark:text-white">Dashboard</h1>
+        <h1 className="text-2xl font-bold mb-4 dark:text-white">Início</h1>
 
         {loadError && (
           <div className="bg-red-50 text-red-700 p-3 rounded-lg mb-4">
