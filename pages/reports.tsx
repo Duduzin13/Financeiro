@@ -71,10 +71,20 @@ export default function ReportsPage() {
     if (mounted && !loading && !user) {
       router.push("/login")
     }
+    
+    // Log de debug para verificar o estado do usuário
+    console.log("[Reports] Estado de autenticação:", {
+      carregando: loading,
+      usuarioExiste: !!user,
+      usuarioID: user?.id,
+      montado: mounted
+    })
   }, [user, loading, router, mounted])
 
   useEffect(() => {
     if (user) {
+      // Log de debug para verificar a chamada de carregamento
+      console.log("[Reports] Carregando dados com período:", period, "e usuário:", user.id)
       loadReportData()
     }
   }, [user, period])
@@ -82,8 +92,11 @@ export default function ReportsPage() {
   const loadReportData = async () => {
     setIsLoading(true)
     try {
+      console.log("[Reports] Iniciando carregamento de dados...")
+      
       // Carregando dados básicos do dashboard
       const dashboardData = await supabaseService.getDashboardData(period)
+      console.log("[Reports] Dados do dashboard:", dashboardData)
       setMonthlyTotals(dashboardData.monthlyTotals || [])
       
       // Processando dados para gráficos e análises
