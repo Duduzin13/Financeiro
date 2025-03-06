@@ -1,11 +1,3 @@
-let userConfig = undefined
-try {
-    userConfig = await
-    import ('./v0-user-next.config')
-} catch (e) {
-    // ignore error
-}
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
@@ -18,6 +10,8 @@ const nextConfig = {
     images: {
         unoptimized: true,
     },
+    // Configurações necessárias para compatibilidade com o Netlify
+    output: 'standalone',
     experimental: {
         webpackBuildWorker: true,
         parallelServerBuildTraces: true,
@@ -25,6 +19,8 @@ const nextConfig = {
         appDir: false,
     },
     trailingSlash: true,
+    // Garantir que arquivos estáticos sejam corretamente servidos
+    assetPrefix: process.env.NODE_ENV === 'production' ? '/_next' : '',
     async redirects() {
         return [{
             source: '/auth/callback',
@@ -34,11 +30,10 @@ const nextConfig = {
     }
 }
 
-mergeConfig(nextConfig, userConfig)
-
-function mergeConfig(nextConfig, userConfig) {
+// Função para mesclar configurações personalizadas
+const mergeConfig = (nextConfig, userConfig) => {
     if (!userConfig) {
-        return
+        return nextConfig;
     }
 
     for (const key in userConfig) {
@@ -54,6 +49,19 @@ function mergeConfig(nextConfig, userConfig) {
             nextConfig[key] = userConfig[key]
         }
     }
+
+    return nextConfig;
 }
 
-export default nextConfig
+// Tenta importar configurações personalizadas
+let userConfig = undefined;
+try {
+    const { default: importedConfig } = await
+    import ('./v0-user-next.config.js').catch(() => ({ default: undefined }));
+    userConfig = importedConfig;
+} catch (e) {
+    // Ignorar erro
+    console.log('No user config found or error loading it.');
+}
+
+export default mergeConfig(nextConfig, userConfig);
