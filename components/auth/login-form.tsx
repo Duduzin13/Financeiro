@@ -197,6 +197,8 @@ export function LoginForm() {
       if (error) {
         console.error("Erro na API do OAuth:", error);
         setError("Erro ao iniciar login com Google: " + error.message);
+        // Redirecionar para o dashboard em caso de erro
+        window.location.href = '/dashboard';
         return;
       }
       
@@ -216,6 +218,8 @@ export function LoginForm() {
     } catch (error: any) {
       console.error("Erro ao fazer login com Google:", error)
       setError("Erro ao fazer login com Google. Tente novamente.")
+      // Redirecionar para o dashboard em caso de erro
+      window.location.href = '/dashboard';
       setLoading(false)
     }
   }
@@ -364,4 +368,3 @@ export function LoginForm() {
 }
 
 export default LoginForm;
-
