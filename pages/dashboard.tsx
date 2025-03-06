@@ -79,11 +79,21 @@ export default function DashboardPage() {
       
       // Ordenar por data e pegar os 3 mais recentes
       const recentIncomes = [...incomes]
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .sort((a, b) => {
+          // Garantindo que created_at é uma string antes de passar para o Date
+          const dateA = a.created_at && typeof a.created_at === 'string' ? new Date(a.created_at) : new Date(0);
+          const dateB = b.created_at && typeof b.created_at === 'string' ? new Date(b.created_at) : new Date(0);
+          return dateB.getTime() - dateA.getTime();
+        })
         .slice(0, 3)
       
       const recentExpenses = [...expenses]
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .sort((a, b) => {
+          // Garantindo que created_at é uma string antes de passar para o Date
+          const dateA = a.created_at && typeof a.created_at === 'string' ? new Date(a.created_at) : new Date(0);
+          const dateB = b.created_at && typeof b.created_at === 'string' ? new Date(b.created_at) : new Date(0);
+          return dateB.getTime() - dateA.getTime();
+        })
         .slice(0, 3)
       
       setSummary({
