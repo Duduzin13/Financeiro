@@ -145,24 +145,16 @@ export function LoginForm() {
       
       console.log("URL de redirecionamento:", redirectTo);
       
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectTo,
-        }
-      })
+      // Usar abordagem simplificada que abre diretamente a URL do OAuth
+      // em vez de usar a API Supabase que pode estar causando problemas de comunicação
+      window.location.href = `https://lfektiroskyzruqjvlhw.supabase.co/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
       
-      if (error) {
-        console.error("Erro ao fazer login com Google:", error);
-        setError("Erro ao fazer login com Google: " + error.message)
-        return
-      }
-      
-      console.log("Login com Google processado, redirecionando...", data);
+      // Não precisamos mais esperar pela resposta aqui, pois estamos
+      // redirecionando diretamente para a URL de autorização
+      return;
     } catch (error: any) {
       console.error("Erro ao fazer login com Google:", error)
       setError("Erro ao fazer login com Google. Tente novamente.")
-    } finally {
       setLoading(false)
     }
   }
