@@ -20,16 +20,36 @@ export function LoginForm() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { user, isConfigured } = useAuth()
+  const { user, isConfigured, loading: authLoading } = useAuth()
   const [isResendingEmail, setIsResendingEmail] = useState(false)
   const [isEmailNotConfirmed, setIsEmailNotConfirmed] = useState(false)
   const [isInvalidCredentials, setIsInvalidCredentials] = useState(false)
+  const [showDebugInfo, setShowDebugInfo] = useState(false)
 
   useEffect(() => {
-    if (user) {
-      router.push("/dashboard")
+    const checkAuth = async () => {
+      console.log('[LoginForm] Verificando autenticação...');
+      
+      if (!authLoading && user) {
+        console.log('[LoginForm] Usuário já autenticado, redirecionando para dashboard');
+        router.push("/dashboard");
+      }
+    };
+    
+    checkAuth();
+  }, [user, authLoading, router]);
+
+  const handleDebugClick = () => {
+    if (!showDebugInfo) {
+      const debugCounter = parseInt(localStorage.getItem('debug_counter') || '0') + 1;
+      localStorage.setItem('debug_counter', debugCounter.toString());
+      
+      if (debugCounter >= 5) {
+        setShowDebugInfo(true);
+        localStorage.setItem('debug_counter', '0');
+      }
     }
-  }, [user, router])
+  };
 
   if (!isConfigured) {
     return (
@@ -156,12 +176,39 @@ export function LoginForm() {
   return (
     <Card className="w-[350px] dark:border-gray-700 dark:bg-gray-800">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold dark:text-white">Entrar</CardTitle>
+        <CardTitle className="text-2xl font-bold dark:text-white" onClick={handleDebugClick}>
+          Entrar
+        </CardTitle>
         <CardDescription className="dark:text-gray-400">
           Entre com seu e-mail e senha para acessar o sistema
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Área de informações de depuração - visível após 5 cliques no título */}
+        {showDebugInfo && (
+          <div className="mb-4 p-2 bg-gray-100 dark:bg-gray-700 rounded-md text-xs">
+            <h4 className="font-semibold mb-1">Informações de depuração:</h4>
+            <div className="space-y-1 max-h-32 overflow-auto">
+              <p>Usuário: {user ? 'Autenticado' : 'Não autenticado'}</p>
+              <p>Autenticação: {authLoading ? 'Carregando...' : 'Concluída'}</p>
+              <p>URL: {typeof window !== 'undefined' ? window.location.href : 'N/A'}</p>
+              <p>Supabase Configurado: {isConfigured ? 'Sim' : 'Não'}</p>
+              <details>
+                <summary>Usuário detalhado</summary>
+                <pre className="whitespace-pre-wrap">
+                  {user ? JSON.stringify(user, null, 2) : 'null'}
+                </pre>
+              </details>
+              <button 
+                onClick={() => sessionStorage.clear()} 
+                className="text-xs bg-red-500 text-white px-2 py-0.5 rounded"
+              >
+                Limpar SessionStorage
+              </button>
+            </div>
+          </div>
+        )}
+
         <Tabs defaultValue="email" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4 dark:bg-gray-700">
             <TabsTrigger value="email" className="dark:data-[state=active]:bg-gray-600 dark:text-white">

@@ -48,6 +48,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Limpar o estado mesmo em caso de erro para garantir que o usuário seja desconectado na UI
       setUser(null)
       setSession(null)
+
+      // Limpar qualquer estado de redirecionamento que possa estar armazenado
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('auth_redirect_processed');
+      }
     } catch (error) {
       console.error("Erro ao processar logout:", error)
       throw error
@@ -75,26 +80,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         console.log("Buscando sessão inicial")
         const {
-          data: { session },
+          data: { session: initialSession },
           error: sessionError,
         } = await supabase.auth.getSession()
         
         if (sessionError) {
-          console.warn("Erro ao obter sessão:", sessionError);
+          console.warn("Erro ao obter sessão inicial:", sessionError);
+        } else {
+          console.log("Sessão inicial obtida:", initialSession ? "Autenticado" : "Não autenticado");
         }
         
-        setSession(session)
-        setUser(session?.user ?? null)
+        setSession(initialSession)
+        setUser(initialSession?.user ?? null)
 
         console.log("Configurando listener para mudanças de autenticação")
         const {
           data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
-          setSession(session)
-          setUser(session?.user ?? null)
+        } = supabase.auth.onAuthStateChange((_event, newSession) => {
+          console.log("Evento de mudança de estado de autenticação:", _event);
+          setSession(newSession)
+          setUser(newSession?.user ?? null)
         })
 
         return () => {
+          console.log("Limpando inscrição de auth state change");
           subscription.unsubscribe()
         }
       } catch (e) {
