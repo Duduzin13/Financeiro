@@ -25,30 +25,24 @@ export function LoginForm() {
   const [isEmailNotConfirmed, setIsEmailNotConfirmed] = useState(false)
   const [isInvalidCredentials, setIsInvalidCredentials] = useState(false)
   const [showDebugInfo, setShowDebugInfo] = useState(false)
+  const [debugCounter, setDebugCounter] = useState(0)
 
   useEffect(() => {
-    const checkAuth = async () => {
-      console.log('[LoginForm] Verificando autenticação...');
-      
-      if (!authLoading && user) {
-        console.log('[LoginForm] Usuário já autenticado, redirecionando para dashboard');
-        router.push("/dashboard");
-      }
-    };
-    
-    checkAuth();
+    if (!authLoading && user) {
+      console.log('[LoginForm] Usuário já autenticado, redirecionando para dashboard');
+      router.push("/dashboard");
+    }
   }, [user, authLoading, router]);
 
   const handleDebugClick = () => {
-    if (!showDebugInfo) {
-      const debugCounter = parseInt(localStorage.getItem('debug_counter') || '0') + 1;
-      localStorage.setItem('debug_counter', debugCounter.toString());
-      
-      if (debugCounter >= 5) {
+    setDebugCounter(prev => {
+      const newCount = prev + 1;
+      if (newCount >= 5) {
         setShowDebugInfo(true);
-        localStorage.setItem('debug_counter', '0');
+        return 0;
       }
-    }
+      return newCount;
+    });
   };
 
   if (!isConfigured) {
