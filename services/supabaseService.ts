@@ -277,23 +277,55 @@ export const supabaseService = {
   // Obter dados do dashboard
   async getDashboardData(period = "3") {
     try {
+      console.log("[SupabaseService] Buscando dados do dashboard para período:", period)
       const months = parseInt(period)
       const startDate = new Date()
       startDate.setMonth(startDate.getMonth() - months)
       startDate.setHours(0, 0, 0, 0)
       
+      // Obter o usuário atual para filtrar os dados
+      const supabase = getSupabase()
+      const { data: userData, error: userError } = await supabase.auth.getUser()
+      
+      if (userError) {
+        console.error("[SupabaseService] Erro ao obter usuário:", userError)
+        throw new Error("Usuário não autenticado")
+      }
+      
+      if (!userData.user) {
+        console.error("[SupabaseService] Usuário não encontrado")
+        throw new Error("Usuário não autenticado")
+      }
+      
+      const userId = userData.user.id
+      console.log("[SupabaseService] Buscando dados para o usuário:", userId)
+      
       // Buscar receitas e despesas entre startDate e hoje
-      const { data: incomes } = await getSupabase()
+      const { data: incomes, error: incomesError } = await supabase
         .from('incomes')
         .select('amount, date')
+        .eq('user_id', userId)
         .gte('date', startDate.toISOString())
         .order('date', { ascending: false })
+      
+      if (incomesError) {
+        console.error("[SupabaseService] Erro ao buscar receitas:", incomesError)
+      }
+      
+      console.log("[SupabaseService] Receitas encontradas:", incomes?.length || 0)
 
-      const { data: expenses } = await getSupabase()
+      const { data: expenses, error: expensesError } = await supabase
         .from('expenses')
         .select('amount, date')
+        .eq('user_id', userId)
         .gte('date', startDate.toISOString())
         .order('date', { ascending: false })
+      
+      if (expensesError) {
+        console.error("[SupabaseService] Erro ao buscar despesas:", expensesError)
+      }
+      
+      console.log("[SupabaseService] Despesas encontradas:", expenses?.length || 0)
 
       // Define interfaces para as transações
       interface Transaction {
@@ -412,21 +444,40 @@ export const supabaseService = {
   // Obter despesas por categoria
   async getExpensesByCategory(period = "3") {
     try {
+      console.log("[SupabaseService] Buscando despesas por categoria para período:", period)
       const months = parseInt(period)
       const startDate = new Date()
       startDate.setMonth(startDate.getMonth() - months)
       startDate.setHours(0, 0, 0, 0)
       
-      const { data, error } = await getSupabase()
+      // Obter o usuário atual para filtrar os dados
+      const supabase = getSupabase()
+      const { data: userData, error: userError } = await supabase.auth.getUser()
+      
+      if (userError || !userData.user) {
+        console.error("[SupabaseService] Erro de autenticação:", userError)
+        throw new Error("Usuário não autenticado")
+      }
+      
+      const userId = userData.user.id
+      console.log("[SupabaseService] Buscando despesas por categoria para o usuário:", userId)
+      
+      const { data, error } = await supabase
         .from('expenses')
         .select(`
           amount,
           categories!inner(name)
         `)
+        .eq('user_id', userId)
         .gte('date', startDate.toISOString())
         .order('amount', { ascending: false })
       
-      if (error) throw error
+      if (error) {
+        console.error("[SupabaseService] Erro ao buscar despesas por categoria:", error)
+        throw error
+      }
+      
+      console.log("[SupabaseService] Despesas por categoria encontradas:", data?.length || 0)
       
       // Define tipos para os dados
       interface CategoryExpense {
@@ -464,23 +515,42 @@ export const supabaseService = {
   // Obter as maiores despesas
   async getTopExpenses(period = "3", limit = 5) {
     try {
+      console.log("[SupabaseService] Buscando maiores despesas para período:", period)
       const months = parseInt(period)
       const startDate = new Date()
       startDate.setMonth(startDate.getMonth() - months)
       startDate.setHours(0, 0, 0, 0)
       
-      const { data, error } = await getSupabase()
+      // Obter o usuário atual para filtrar os dados
+      const supabase = getSupabase()
+      const { data: userData, error: userError } = await supabase.auth.getUser()
+      
+      if (userError || !userData.user) {
+        console.error("[SupabaseService] Erro de autenticação:", userError)
+        throw new Error("Usuário não autenticado")
+      }
+      
+      const userId = userData.user.id
+      console.log("[SupabaseService] Buscando maiores despesas para o usuário:", userId)
+      
+      const { data, error } = await supabase
         .from('expenses')
         .select(`
           amount,
           description,
           categories!inner(name)
         `)
+        .eq('user_id', userId)
         .gte('date', startDate.toISOString())
         .order('amount', { ascending: false })
         .limit(limit)
       
-      if (error) throw error
+      if (error) {
+        console.error("[SupabaseService] Erro ao buscar maiores despesas:", error)
+        throw error
+      }
+      
+      console.log("[SupabaseService] Maiores despesas encontradas:", data?.length || 0)
       
       interface Expense {
         amount: number;
