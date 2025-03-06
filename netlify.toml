@@ -6,6 +6,9 @@
 # Configuração de ambiente de Node
 [build.environment]
   NODE_VERSION = "18.18.0"  # Versão compatível com o Next.js mais recente
+  # Variáveis para ambiente Supabase (versão fixa para garantir compatibilidade)
+  NEXT_PUBLIC_SUPABASE_URL = "https://lfektiroskyzruqjvlhw.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmZWt0aXJvc2t5enJ1cWp2bGh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDExNzkyNjMsImV4cCI6MjA1Njc1NTI2M30.sTuqp2PKK9bnLwhUib2Knof3cWQb2XtysozN_vv1x_E"
 
 # Plugin do Next.js para Netlify
 [[plugins]]
@@ -16,6 +19,14 @@
   for = "/_next/static/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# Headers para resolver problemas de CORS
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept, Authorization"
 
 # Redirecionamentos para SPA e lidar com rotas do Next.js
 [[redirects]]
@@ -30,11 +41,24 @@
   status = 200
   force = true
 
+# Configuração de redirecionamentos de autenticação OAuth
+[[redirects]]
+  from = "/auth/callback"
+  to = "/api/auth/callback"
+  status = 200
+
 # Redirecionar para a página de dashboard após login bem-sucedido
 [[redirects]]
   from = "/_supabase/auth/v1/callback"
   to = "/dashboard"
   status = 302
+  force = true
+
+# Garantir que a API do Supabase seja acessada corretamente
+[[redirects]]
+  from = "https://lfektiroskyzruqjvlhw.supabase.co/*"
+  to = "https://lfektiroskyzruqjvlhw.supabase.co/:splat"
+  status = 200
   force = true
 
 # Fallback para permitir que o Next.js lide com rotas internas
