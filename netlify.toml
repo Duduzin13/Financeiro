@@ -44,13 +44,13 @@
 # Configuração de redirecionamentos de autenticação OAuth
 [[redirects]]
   from = "/auth/callback"
-  to = "/auth/callback*"
+  to = "/api/auth/callback"
   status = 200
 
 # Adicionar redirecionamento específico para o callback do Google OAuth
 [[redirects]]
   from = "/auth/callback*"
-  to = "/_supabase/auth/v1/callback"
+  to = "/dashboard"
   status = 302
   force = true
 
