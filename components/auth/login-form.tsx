@@ -174,8 +174,8 @@ export function LoginForm() {
         ? window.location.origin
         : 'https://financeiro-control.netlify.app';
       
-      // Usar /auth/callback em vez de /dashboard para o redirecionamento
-      const redirectTo = `${baseUrl}/auth/callback`;
+      // Redirecionar diretamente para o dashboard após autenticação
+      const redirectTo = `${baseUrl}/dashboard`;
       
       console.log("URL de redirecionamento:", redirectTo);
       
