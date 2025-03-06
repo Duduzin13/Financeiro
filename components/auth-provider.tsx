@@ -37,6 +37,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Função de logout
   const signOut = async () => {
     try {
+      if (!session) {
+        console.warn("Tentativa de logout sem sessão ativa.");
+        return;
+      }
       const supabase = initSupabase()
       const { error: signOutError } = await supabase.auth.signOut()
       
