@@ -169,7 +169,10 @@ export const supabaseService = {
   async getExpenses() {
     const { data, error } = await getSupabase()
       .from('expenses')
-      .select('*')
+      .select(`
+        *,
+        categories(*)
+      `)
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -197,16 +200,36 @@ export const supabaseService = {
       throw new Error("Usuário não autenticado");
     }
     
+    let categoryId = null;
+    
+    // Se uma categoria foi fornecida, buscar o ID correspondente
+    if (expense.category) {
+      const { data: categoryData } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('name', expense.category)
+        .eq('user_id', userData.user.id)
+        .single();
+      
+      if (categoryData) {
+        categoryId = categoryData.id;
+      }
+    }
+    
     const { data, error } = await supabase
       .from('expenses')
       .insert({
         description: expense.description,
         amount: expense.amount,
-        category: expense.category || 'Geral',
+        category: expense.category || 'Geral', // Mantido para compatibilidade
+        category_id: categoryId,
         is_essential: expense.is_essential,
         user_id: userData.user.id
       })
-      .select()
+      .select(`
+        *,
+        categories(*)
+      `)
       .single();
     
     if (error) {
@@ -222,11 +245,37 @@ export const supabaseService = {
     category?: string;
     is_essential?: boolean;
   }) {
-    const { data, error } = await getSupabase()
+    const supabase = getSupabase();
+    const updateData: any = { ...expense };
+    
+    // Se uma categoria foi fornecida, buscar o ID correspondente
+    if (expense.category) {
+      const { data: userData } = await supabase.auth.getUser();
+      
+      if (!userData.user) {
+        throw new Error("Usuário não autenticado");
+      }
+      
+      const { data: categoryData } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('name', expense.category)
+        .eq('user_id', userData.user.id)
+        .single();
+      
+      if (categoryData) {
+        updateData.category_id = categoryData.id;
+      }
+    }
+    
+    const { data, error } = await supabase
       .from('expenses')
-      .update(expense)
+      .update(updateData)
       .eq('id', id)
-      .select()
+      .select(`
+        *,
+        categories(*)
+      `)
       .single();
     
     if (error) throw error;
@@ -462,15 +511,15 @@ export const supabaseService = {
       const userId = userData.user.id
       console.log("[SupabaseService] Buscando despesas por categoria para o usuário:", userId)
       
+      // Consulta usando a relação adequada entre expenses e categories
       const { data, error } = await supabase
         .from('expenses')
         .select(`
           amount,
-          categories!inner(name)
+          categories(name)
         `)
         .eq('user_id', userId)
         .gte('created_at', startDate.toISOString())
-        .order('amount', { ascending: false })
       
       if (error) {
         console.error("[SupabaseService] Erro ao buscar despesas por categoria:", error)
@@ -479,33 +528,24 @@ export const supabaseService = {
       
       console.log("[SupabaseService] Despesas por categoria encontradas:", data?.length || 0)
       
-      // Define tipos para os dados
-      interface CategoryExpense {
-        category_name: string;
-        total_amount: number;
-      }
+      // Agrupar despesas por categoria e calcular o total
+      const categoryTotals: Record<string, number> = {};
       
-      // Agrupa despesas por categoria
-      const expensesByCategory = data.reduce((acc: CategoryExpense[], expense: any) => {
-        const categoryName = expense.categories?.name || 'Sem Categoria'
-        const existingCategory = acc.find((cat: CategoryExpense) => cat.category_name === categoryName)
-        
-        if (existingCategory) {
-          existingCategory.total_amount += expense.amount
-        } else {
-          acc.push({
-            category_name: categoryName,
-            total_amount: expense.amount
-          })
-        }
-        
-        return acc
-      }, [] as CategoryExpense[])
+      data?.forEach((expense: { 
+        amount: number; 
+        categories: { name: string } | null;
+      }) => {
+        const categoryName = expense.categories?.name || 'Sem Categoria';
+        categoryTotals[categoryName] = (categoryTotals[categoryName] || 0) + expense.amount;
+      });
       
-      // Ordena por valor total (maior para menor)
-      expensesByCategory.sort((a: CategoryExpense, b: CategoryExpense) => b.total_amount - a.total_amount)
+      // Converter para o formato esperado pelo frontend
+      const formattedData = Object.entries(categoryTotals).map(([category_name, total_amount]) => ({
+        category_name,
+        total_amount
+      }));
       
-      return { data: expensesByCategory, error: null }
+      return formattedData;
     } catch (error) {
       console.error("Erro ao obter despesas por categoria:", error)
       return { data: [], error }
@@ -533,12 +573,13 @@ export const supabaseService = {
       const userId = userData.user.id
       console.log("[SupabaseService] Buscando maiores despesas para o usuário:", userId)
       
+      // Consulta usando a relação adequada entre expenses e categories
       const { data, error } = await supabase
         .from('expenses')
         .select(`
           amount,
           description,
-          categories!inner(name)
+          categories(name)
         `)
         .eq('user_id', userId)
         .gte('created_at', startDate.toISOString())
@@ -552,19 +593,18 @@ export const supabaseService = {
       
       console.log("[SupabaseService] Maiores despesas encontradas:", data?.length || 0)
       
-      interface Expense {
-        amount: number;
-        description: string;
-        categories: { name: string };
-      }
-      
-      const formattedData = data.map((expense: Expense) => ({
+      // Transformar os dados para manter a mesma estrutura esperada pelo frontend
+      const formattedData = data?.map((expense: { 
+        amount: number; 
+        description: string; 
+        categories: { name: string } | null;
+      }) => ({
         amount: expense.amount,
         description: expense.description,
         category_name: expense.categories?.name || 'Sem Categoria'
-      }))
+      })) || [];
       
-      return { data: formattedData, error: null }
+      return formattedData;
     } catch (error) {
       console.error("Erro ao obter maiores despesas:", error)
       return { data: [], error }

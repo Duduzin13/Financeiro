@@ -127,12 +127,12 @@ export default function ReportsPage() {
         setMonthlyChartData(chartData)
         
         // Carregando dados por categoria para o gráfico de pizza
-        const { data: expensesByCategory } = await supabaseService.getExpensesByCategory(period)
+        const expensesByCategory = await supabaseService.getExpensesByCategory(period)
         
         // Definindo cores para as categorias
         const colors = ['#FF8042', '#00C49F', '#FFBB28', '#0088FE', '#FF0000', '#8884d8', '#82ca9d', '#ffc658']
         
-        if (expensesByCategory) {
+        if (expensesByCategory && Array.isArray(expensesByCategory)) {
           const formattedCategoryData = expensesByCategory.map((category: {category_name: string, total_amount: number}, index: number) => ({
             name: category.category_name,
             valor: category.total_amount,
@@ -143,9 +143,9 @@ export default function ReportsPage() {
         }
         
         // Carregando as maiores despesas
-        const { data: topExpensesData } = await supabaseService.getTopExpenses(period, 5) // top 5 despesas
+        const topExpensesData = await supabaseService.getTopExpenses(period, 5) // top 5 despesas
         
-        if (topExpensesData) {
+        if (topExpensesData && Array.isArray(topExpensesData)) {
           const formattedTopExpenses = topExpensesData.map((expense: {description: string, amount: number, category_name: string}) => ({
             name: expense.description,
             valor: expense.amount,
