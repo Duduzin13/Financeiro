@@ -105,12 +105,18 @@ export default function ReportsPage() {
         const totalIncome = dashboardData.monthlyTotals.reduce((sum, month) => sum + month.total_income, 0)
         const totalExpenses = dashboardData.monthlyTotals.reduce((sum, month) => sum + month.total_expenses, 0)
         
+        // Estimativa de despesas essenciais e não essenciais
+        // Assumindo que 60% das despesas são essenciais e 40% não essenciais
+        const essentialExpenses = totalExpenses * 0.6
+        const nonEssentialExpenses = totalExpenses * 0.4
+        
         setFinancialSummary({
           totalIncome,
           totalExpenses,
           balance: totalIncome - totalExpenses,
-          essentialPercentage: totalIncome > 0 ? (totalExpenses * 0.6 / totalIncome) * 100 : 0,
-          nonEssentialPercentage: totalIncome > 0 ? (totalExpenses * 0.3 / totalIncome) * 100 : 0,
+          // Calculando as porcentagens em relação à renda total
+          essentialPercentage: totalIncome > 0 ? (essentialExpenses / totalIncome) * 100 : 0,
+          nonEssentialPercentage: totalIncome > 0 ? (nonEssentialExpenses / totalIncome) * 100 : 0,
           savingsPercentage: totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0,
           emergencyFund: totalExpenses * 6 // 6 meses de despesas
         })
