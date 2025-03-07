@@ -14,6 +14,21 @@ export type Category = {
   user_id: string;
 };
 
+export type Expense = {
+  id: string;
+  description: string;
+  amount: number;
+  category_id: string | null;
+  category?: string; // Campo legado, mantido para compatibilidade
+  is_essential: boolean;
+  created_at: string;
+  user_id: string;
+};
+
+export type ExpenseWithCategory = Expense & {
+  categories: Category | null;
+};
+
 export type Transaction = {
   id: string;
   description: string;
